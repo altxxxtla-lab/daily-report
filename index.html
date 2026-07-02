@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>業務日報</title>
+<style>
+  :root{
+    --ink:#1f2933;
+    --sub:#5a6672;
+    --line:#d7dde3;
+    --paper:#fdfdfc;
+    --accent:#2f5d50;
+    --accent-soft:#e7efec;
+    --warn:#b3492f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:#eef1ef;
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    color:var(--ink);
+    padding:32px 16px 80px;
+  }
+  .sheet{
+    max-width:820px;
+    margin:0 auto;
+    background:var(--paper);
+    border:1px solid var(--line);
+    box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  }
+  .sheet-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    padding:28px 32px 20px;
+    border-bottom:3px solid var(--accent);
+  }
+  .sheet-head h1{
+    font-size:24px;
+    letter-spacing:0.3em;
+    margin:0;
+  }
+  .sheet-head .stamp{
+    font-size:11px;
+    color:var(--sub);
+    letter-spacing:0.05em;
+  }
+  .meta-grid{
+    display:grid;
+    grid-template-columns:100px 1fr 100px 1fr;
+    border-bottom:1px solid var(--line);
+  }
+  .meta-grid > div{
+    border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    padding:10px 12px;
+  }
+  .meta-grid > div:nth-child(4n){border-right:none;}
+  .meta-label{
+    background:var(--accent-soft);
+    font-size:12px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    color:var(--accent);
+  }
+  input[type=text], input[type=date], input[type=time], textarea{
+    width:100%;
+    border:none;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--ink);
+    background:transparent;
+    padding:2px 0;
+  }
+  input:focus, textarea:focus{
+    outline:none;
+    background:#fbfdfc;
+  }
+  .time-row{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+  }
+  .time-row input{width:auto; flex:1;}
+
+  .block{
+    border-bottom:1px solid var(--line);
+    display:grid;
+    grid-template-columns:130px 1fr;
+  }
+  .block-label{
+    background:var(--accent-soft);
+    font-size:12px;
+    font-weight:600;
+    color:var(--accent);
+    padding:12px;
+    border-right:1px solid var(--line);
+  }
+  .block-label .hint{
+    display:block;
+    margin-top:6px;
+    font-size:10.5px;
+    font-weight:400;
+    color:var(--sub);
+    line-height:1.5;
+  }
+  .block textarea{
+    width:100%;
+    border:none;
+    resize:vertical;
+    padding:12px;
+    font-size:14px;
+    line-height:1.7;
+    min-height:80px;
+  }
+
+  .approve-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+  }
+  .approve-grid > div{
+    border-right:1px solid var(--line);
+  }
+  .approve-grid > div:last-child{border-right:none;}
+  .approve-label{
+    background:var(--accent-soft);
+    font-size:12px;
+    font-weight:600;
+    color:var(--accent);
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .approve-grid textarea{
+    width:100%;
+    border:none;
+    min-height:70px;
+    padding:10px 12px;
+    font-size:13px;
+  }
+
+  .actions{
+    max-width:820px;
+    margin:18px auto 0;
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+  button{
+    font-family:inherit;
+    font-size:13px;
+    padding:10px 18px;
+    border-radius:3px;
+    border:1px solid var(--accent);
+    background:var(--accent);
+    color:#fff;
+    cursor:pointer;
+  }
+  button.secondary{
+    background:#fff;
+    color:var(--accent);
+  }
+  button:active{transform:translateY(1px);}
+  .toast{
+    max-width:820px;
+    margin:10px auto 0;
+    text-align:right;
+    font-size:12px;
+    color:var(--accent);
+    min-height:16px;
+  }
+
+  @media (max-width:600px){
+    .sheet-head{flex-direction:column; gap:4px; padding:20px 18px 16px;}
+    .meta-grid{grid-template-columns:90px 1fr;}
+    .meta-grid > div:nth-child(4n){border-right:1px solid var(--line);}
+    .meta-grid > div:nth-child(2n){border-right:none;}
+    .block{grid-template-columns:100px 1fr;}
+    .approve-grid{grid-template-columns:1fr;}
+    .approve-grid > div{border-right:none; border-bottom:1px solid var(--line);}
+    .approve-grid > div:last-child{border-bottom:none;}
+  }
+
+  @media print{
+    body{background:#fff; padding:0;}
+    .sheet{border:none; box-shadow:none; max-width:none;}
+    .actions, .toast{display:none;}
+    textarea, input{border:none;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="sheet" id="sheet">
+    <div class="sheet-head">
+      <h1>業 務 日 報</h1>
+      <span class="stamp">DAILY REPORT</span>
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-label">日付</div>
+      <div><input type="date" id="f-date"></div>
+      <div class="meta-label">所属</div>
+      <div><input type="text" id="f-dept" placeholder="例）〇〇支社"></div>
+
+      <div class="meta-label">氏名</div>
+      <div><input type="text" id="f-name" placeholder="氏名を入力"></div>
+      <div class="meta-label">提出先</div>
+      <div><input type="text" id="f-to" placeholder="例）〇〇課長"></div>
+
+      <div class="meta-label">勤務時間</div>
+      <div class="time-row">
+        <input type="time" id="f-start"><span>～</span><input type="time" id="f-end">
+      </div>
+      <div class="meta-label">休憩時間</div>
+      <div class="time-row">
+        <input type="time" id="f-break-start"><span>～</span><input type="time" id="f-break-end">
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-label">本日の予定</div>
+      <textarea id="f-plan" placeholder="本日取り組む予定の内容を記入"></textarea>
+    </div>
+    <div class="block">
+      <div class="block-label">実施内容<span class="hint">学習した資格名・範囲・教材など</span></div>
+      <textarea id="f-done" placeholder="例）〇〇資格　第3章　テキスト読了／問題集10問"></textarea>
+    </div>
+    <div class="block">
+      <div class="block-label">進捗状況<span class="hint">達成率・正答率など</span></div>
+      <textarea id="f-progress" placeholder="例）全体の40%完了、過去問正答率60%"></textarea>
+    </div>
+    <div class="block">
+      <div class="block-label">課題・気づき</div>
+      <textarea id="f-issue" placeholder="つまずいた点、理解が浅い箇所など"></textarea>
+    </div>
+    <div class="block">
+      <div class="block-label">明日の予定</div>
+      <textarea id="f-next" placeholder="明日取り組む予定の内容"></textarea>
+    </div>
+    <div class="block">
+      <div class="block-label">特記事項<span class="hint">連絡・相談したいこと</span></div>
+      <textarea id="f-note" placeholder="会社への連絡・相談事項があれば記入"></textarea>
+    </div>
+
+    <div class="approve-grid">
+      <div>
+        <div class="approve-label">本人確認</div>
+        <textarea id="f-self"></textarea>
+      </div>
+      <div>
+        <div class="approve-label">上長確認</div>
+        <textarea id="f-boss"></textarea>
+      </div>
+      <div>
+        <div class="approve-label">備考</div>
+        <textarea id="f-remarks"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="secondary" id="clear-btn">クリア</button>
+    <button class="secondary" id="copy-btn">テキストをコピー</button>
+    <button class="secondary" id="print-btn">印刷 / PDF保存</button>
+    <button id="submit-btn">提出（保存）</button>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ここにGoogle Apps ScriptのウェブアプリURLを貼り付けてください
+  // 例）const SCRIPT_URL = "https://script.google.com/macros/s/xxxxxxxx/exec";
+  const SCRIPT_URL = "";
+
+  // 今日の日付を初期セット
+  const dateInput = document.getElementById('f-date');
+  const today = new Date();
+  dateInput.value = today.toISOString().slice(0,10);
+
+  const ids = ['f-date','f-dept','f-name','f-to','f-start','f-end','f-break-start','f-break-end',
+    'f-plan','f-done','f-progress','f-issue','f-next','f-note','f-self','f-boss','f-remarks'];
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    setTimeout(()=>{ t.textContent=''; }, 2500);
+  }
+
+  document.getElementById('clear-btn').addEventListener('click', ()=>{
+    if(!confirm('入力内容をすべてクリアします。よろしいですか？')) return;
+    ids.forEach(id=>{ document.getElementById(id).value=''; });
+    dateInput.value = today.toISOString().slice(0,10);
+    showToast('クリアしました');
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', async ()=>{
+    const v = id => document.getElementById(id).value || '　';
+    const text =
+`業務日報
+日付：${v('f-date')}　所属：${v('f-dept')}　氏名：${v('f-name')}　提出先：${v('f-to')}
+勤務時間：${v('f-start')}～${v('f-end')}　休憩時間：${v('f-break-start')}～${v('f-break-end')}
+
+【本日の予定】
+${v('f-plan')}
+
+【実施内容】
+${v('f-done')}
+
+【進捗状況】
+${v('f-progress')}
+
+【課題・気づき】
+${v('f-issue')}
+
+【明日の予定】
+${v('f-next')}
+
+【特記事項】
+${v('f-note')}
+
+【本人確認】${v('f-self')}
+【上長確認】${v('f-boss')}
+【備考】${v('f-remarks')}`;
+
+    try{
+      await navigator.clipboard.writeText(text);
+      showToast('コピーしました。チャットやメールに貼り付けられます');
+    }catch(e){
+      showToast('コピーに失敗しました。手動で選択してください');
+    }
+  });
+
+  document.getElementById('print-btn').addEventListener('click', ()=>{
+    window.print();
+  });
+
+  document.getElementById('submit-btn').addEventListener('click', async ()=>{
+    if(!SCRIPT_URL){
+      showToast('SCRIPT_URLが未設定です（HTML内を確認してください）');
+      return;
+    }
+    const v = id => document.getElementById(id).value;
+    const payload = {
+      date: v('f-date'), dept: v('f-dept'), name: v('f-name'), to: v('f-to'),
+      start: v('f-start'), end: v('f-end'),
+      breakStart: v('f-break-start'), breakEnd: v('f-break-end'),
+      plan: v('f-plan'), done: v('f-done'), progress: v('f-progress'),
+      issue: v('f-issue'), next: v('f-next'), note: v('f-note'),
+      self: v('f-self'), boss: v('f-boss'), remarks: v('f-remarks')
+    };
+
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送信中…';
+
+    try{
+      // Apps Script宛はCORSプリフライトを避けるためtext/plainで送信
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      });
+      showToast('提出しました（スプレッドシートに保存されました）');
+    }catch(e){
+      showToast('送信に失敗しました。通信環境をご確認ください');
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = '提出（保存）';
+    }
+  });
+</script>
+</body>
+</html>
